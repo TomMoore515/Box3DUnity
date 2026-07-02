@@ -1,0 +1,26 @@
+{
+  "name": "com.luthien.box3d-unity",
+  "version": "0.2.0",
+  "displayName": "Box3D for Unity",
+  "description": "C# bindings and a Unity integration layer for Box3D, Erin Catto's 3D physics engine. Engine-free interop + idiomatic core assemblies with a thin Unity adapter. Built against box3d v0.1.0 with the double-precision (large world) ABI.",
+  "unity": "6000.0",
+  "keywords": [
+    "physics",
+    "box3d",
+    "collision",
+    "native"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Tom Moore",
+    "url": "https://github.com/TomMoore515"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TomMoore515/Box3DUnity.git"
+  },
+  "documentationUrl": "https://github.com/TomMoore515/Box3DUnity#readme",
+  "changelogUrl": "https://github.com/TomMoore515/Box3DUnity/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/TomMoore515/Box3DUnity/blob/main/LICENSE.md",
+  "dependencies": {}
+}

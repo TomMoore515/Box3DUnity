@@ -1,0 +1,38 @@
+# .gitignore for the com.luthien.box3d-unity package repo.
+#
+# This is a bare Unity *package* (package.json at the repo root), not a full
+# Unity project — so there is no Library/, Temp/, Logs/, or Build/ to ignore.
+#
+# Intentionally TRACKED (do not add rules that would exclude these):
+#   - *.meta                       Unity asset GUIDs — required, must be committed
+#   - Runtime/Plugins/**/*.dll     shipped Windows x64 native binary
+#   - Runtime/Plugins/**/*.so      shipped Linux x64 native binary
+#   - Native~/                     build scripts (Unity ignores ~ folders; git should not)
+
+# --- OS cruft ---
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# --- IDE / editor ---
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+
+# --- Stray C#/.NET build output (only appears if the package is compiled
+#     outside Unity, e.g. `dotnet build`; never committed) ---
+obj/
+bin/
+*.csproj
+*.sln
+*.user
+
+# --- Local native build intermediates, in case a build is ever pointed
+#     at the package tree instead of a temp dir (see Native~/*.sh|*.bat) ---
+Native~/build/
+Native~/box3d-src/

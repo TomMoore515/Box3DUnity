@@ -1,0 +1,16 @@
+{
+    "name": "Box3D",
+    "rootNamespace": "Box3D",
+    "references": [
+        "Box3D.Interop"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -1,0 +1,27 @@
+{
+    "name": "Box3D.Samples",
+    "rootNamespace": "Box3D.Samples",
+    "references": [
+        "Box3D",
+        "Box3D.Interop",
+        "Box3D.Unity",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "",
+            "define": "BOX3D_INPUTSYSTEM"
+        }
+    ],
+    "noEngineReferences": false
+}
