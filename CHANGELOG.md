@@ -5,6 +5,22 @@ All notable changes to this package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-03
+
+### Added
+- `PhysicsBenchmark` sample: a seeded, self-contained box3d-vs-Unity-PhysX collision-query
+  benchmark (ray / capsule cast / overlap / depenetrate, single-thread and multi-thread),
+  with a hit-count validity gate and a Markdown report. Gated on a `BOX3D_BENCHMARK` scripting
+  define.
+- README **Performance** section summarising the benchmark: PhysX leads single-thread casts;
+  box3d's edge is universal off-main-thread thread-safety (all query types), build-from-data,
+  and cross-platform determinism.
+
+### Fixed
+- `Box3D.Samples` was an editor-only assembly (`includePlatforms: ["Editor"]`), so its
+  `DominoSpiralDemo` MonoBehaviour could not be added as a scene component — contradicting the
+  sample's own instructions. It is now a regular runtime assembly.
+
 ## [0.2.0] - 2026-07-02
 
 ### Added

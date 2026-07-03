@@ -147,6 +147,57 @@ World queries are safe from any thread while no thread is stepping that world; `
 requires exclusive access. Queries are re-entrant and allocation-free (results gather
 into caller-provided spans through stack-based contexts).
 
+## Performance
+
+box3d is used here as a **collision-query service** (rays, casts, overlaps, the mover), not a
+dynamics engine, so the numbers that matter are query throughput and — the reason this binding
+exists — *where* those queries can run. The `Samples/PhysicsBenchmark` sample loads an identical
+field of 10,000 static boxes into a box3d world and a Unity PhysX collider scene and hits both with
+the same seeded query batches; every row carries a hit-count validity gate (identical geometry +
+queries must return identical hits). Figures below are editor/Mono on a i9 13900K (32 logical cores),
+indicative only — build an IL2CPP player for real numbers.
+
+**Single thread** — PhysX's mature C++ broadphase leads on raw casts; overlap is a tie; world build
+strongly favours box3d (from data vs instantiating colliders):
+
+| Query | box3d | PhysX |
+| --- | ---: | ---: |
+| Raycast | 0.9M/s | **1.4M/s** |
+| CapsuleCast | 0.56M/s | **0.92M/s** |
+| Overlap (`CheckCapsule`) | 2.0M/s | **2.2M/s** |
+| World build (10k boxes) | **17 ms** (from data) | 95 ms (GameObject colliders) |
+
+**Multi thread** — the real reason to reach for box3d. Its queries are thread-safe from any thread
+while nothing steps the world, so they fan across cores. PhysX's *only* parallel query path is the
+batched job API (`RaycastCommand` / `CapsulecastCommand`):
+
+| Query | box3d (N threads) | PhysX parallel | Note |
+| --- | ---: | ---: | --- |
+| Raycast | 10M/s | **24M/s** | PhysX `RaycastCommand` wins independent casts |
+| CapsuleCast | 4M/s | **19M/s** | PhysX `CapsulecastCommand` wins |
+| Overlap | **7M/s** | 2.2M/s | PhysX has **no** parallel overlap — main thread only |
+| Depenetrate | **7M/s** | 1.7M/s | PhysX has **no** parallel form — main thread only |
+
+Read honestly:
+
+- Where Unity ships a batched job command (ray, capsule cast), **PhysX's parallel path is faster** —
+  a tuned SIMD C++ batch. Don't claim a blanket multithread win.
+- box3d's edge is that **every** query type is thread-safe, including overlap and depenetration, which
+  have no PhysX parallel form at all — and that box3d needs **no Unity job system and no main thread**,
+  so the same queries run on a headless server, a `dotnet` process, or your own thread pool. Batched
+  commands also cannot express a *sequential* collide-and-slide loop (each sweep depends on the last),
+  so independent-query throughput is the wrong metric for a character controller.
+- **Cross-platform determinism** is a capability, not a speed: box3d's Windows and Linux builds produce
+  bit-identical results, which Unity/PhysX does not guarantee — decisive for
+  client-predicted / server-authoritative netcode. IL2CPP cannot buy this back for PhysX.
+- **Editor/Mono caveat:** box3d's callback-based queries (capsule / overlap / mover) hit reverse-P/Invoke
+  contention past ~8 threads in the editor; only the callback-free raycast scales to full core count
+  there. IL2CPP largely removes this bottleneck, so the numbers above are not indicative of an optimal player.
+
+Bottom line: choose box3d when you need collision **off the main thread across all query types**, **from
+data with no scene**, or **deterministic across platforms**. Choose PhysX when you need the fastest
+single-thread or job-batched casts and don't need those three properties.
+
 ## Samples
 
 `Samples/DominoSpiral` — a spiral domino train simulated by box3d with Unity as pure
@@ -156,9 +207,17 @@ topples the chain after a short delay (`Restart` via the component context menu)
 Click-drag any domino to shove things around — picking uses box3d's raycast and the
 grabbed body is driven kinematically via `SetTargetTransform`, so it pushes with real
 velocity and can be flung. Works with both input backends (Input System or legacy).
+
+`Samples/PhysicsBenchmark` — the box3d-vs-PhysX query benchmark behind the [Performance](#performance)
+section. Self-contained and seeded: it builds one box field into both engines and times ray / capsule
+cast / overlap / depenetrate, single-thread and across worker threads, writing a Markdown report.
+Gated on a `BOX3D_BENCHMARK` scripting define (so it compiles into nothing until you opt in) and
+gated, on the PhysX side, on the built-in Physics module being enabled — see the sample's own README.
+Add `PhysicsBenchmark` to a GameObject in an empty scene and press Play.
+
 Note: samples are a regular runtime assembly (MonoBehaviours cannot live in
 editor-only assemblies), so exclude `Samples/` from production builds — delete the
-folder, or gate the asmdef with a project-specific define constraint.
+folder, or gate the asmdef with a project-specific define constraint (as `PhysicsBenchmark` does).
 
 ## Rebuilding the native library
 
