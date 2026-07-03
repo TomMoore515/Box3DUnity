@@ -154,29 +154,30 @@ dynamics engine, so the numbers that matter are query throughput and — the rea
 exists — *where* those queries can run. The `Samples/PhysicsBenchmark` sample loads an identical
 field of 10,000 static boxes into a box3d world and a Unity PhysX collider scene and hits both with
 the same seeded query batches; every row carries a hit-count validity gate (identical geometry +
-queries must return identical hits). Figures below are editor/Mono on a i9 13900K (32 logical cores),
-indicative only — build an IL2CPP player for real numbers.
+queries must return identical hits). Figures below are from a **standalone IL2CPP player** on an
+i9-13900K (8 P-cores / 32 threads) — indicative: absolute throughput scales with the CPU, but the
+shape holds.
 
-**Single thread** — PhysX's mature C++ broadphase leads on raw casts; overlap is a tie; world build
+**Single thread** — PhysX's mature C++ broadphase leads every single-thread query; world build
 strongly favours box3d (from data vs instantiating colliders):
 
 | Query | box3d | PhysX |
 | --- | ---: | ---: |
-| Raycast | 0.9M/s | **1.4M/s** |
-| CapsuleCast | 0.56M/s | **0.92M/s** |
-| Overlap (`CheckCapsule`) | 2.0M/s | **2.2M/s** |
-| World build (10k boxes) | **17 ms** (from data) | 95 ms (GameObject colliders) |
+| Raycast | 0.99M/s | **1.62M/s** |
+| CapsuleCast | 0.58M/s | **1.11M/s** |
+| Overlap (`CheckCapsule`) | 2.14M/s | **2.71M/s** |
+| World build (10k boxes) | **13 ms** (from data) | 29 ms (GameObject colliders) |
 
 **Multi thread** — the real reason to reach for box3d. Its queries are thread-safe from any thread
 while nothing steps the world, so they fan across cores. PhysX's *only* parallel query path is the
 batched job API (`RaycastCommand` / `CapsulecastCommand`):
 
-| Query | box3d (N threads) | PhysX parallel | Note |
+| Query | box3d (best) | PhysX parallel | Note |
 | --- | ---: | ---: | --- |
-| Raycast | 10M/s | **24M/s** | PhysX `RaycastCommand` wins independent casts |
-| CapsuleCast | 4M/s | **19M/s** | PhysX `CapsulecastCommand` wins |
-| Overlap | **7M/s** | 2.2M/s | PhysX has **no** parallel overlap — main thread only |
-| Depenetrate | **7M/s** | 1.7M/s | PhysX has **no** parallel form — main thread only |
+| Raycast | 12M/s | **30M/s** | PhysX `RaycastCommand` wins independent casts |
+| CapsuleCast | 4.7M/s | **20M/s** | PhysX `CapsulecastCommand` wins |
+| Overlap | **7.7M/s** | 2.7M/s | PhysX has **no** parallel overlap — main thread only |
+| Depenetrate | **8.0M/s** | 2.5M/s | PhysX has **no** parallel form — main thread only |
 
 Read honestly:
 
@@ -190,9 +191,11 @@ Read honestly:
 - **Cross-platform determinism** is a capability, not a speed: box3d's Windows and Linux builds produce
   bit-identical results, which Unity/PhysX does not guarantee — decisive for
   client-predicted / server-authoritative netcode. IL2CPP cannot buy this back for PhysX.
-- **Editor/Mono caveat:** box3d's callback-based queries (capsule / overlap / mover) hit reverse-P/Invoke
-  contention past ~8 threads in the editor; only the callback-free raycast scales to full core count
-  there. IL2CPP largely removes this bottleneck, so the numbers above are not indicative of an optimal player.
+- **Scaling caveat (measured):** the light, callback-free raycast scales cleanly to all cores, but the
+  heavier queries (capsule cast, overlap, mover) are memory-bandwidth-bound — they peak around the
+  physical core count (8 P-cores on this CPU) and *decline* as SMT threads and E-cores add contention
+  rather than throughput, so the `box3d (best)` column is the peak, not the 32-thread figure. It's a
+  hardware/topology effect, not a binding artifact — it holds identically in Mono and IL2CPP.
 
 Bottom line: choose box3d when you need collision **off the main thread across all query types**, **from
 data with no scene**, or **deterministic across platforms**. Choose PhysX when you need the fastest

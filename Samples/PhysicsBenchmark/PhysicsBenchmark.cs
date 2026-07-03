@@ -229,9 +229,11 @@ namespace Box3D.Benchmark
                           "wins those here), and box3d needs no Unity job system or main thread at all — headless servers, " +
                           "custom thread pools, off-Unity entirely._");
             sb.AppendLine();
-            sb.AppendLine("_Editor/Mono caveat: box3d's callback-based queries (capsule cast, overlap, collide) are throttled " +
-                          "by reverse-P/Invoke contention at high thread counts here — the callback-free raycast scales " +
-                          "cleanest. Build an IL2CPP player for the true scaling curve._");
+            sb.AppendLine("_Scaling caveat: the light callback-free raycast scales to all cores, but the heavier queries " +
+                          "(capsule cast, overlap, mover) are memory-bandwidth-bound — they peak around the physical core " +
+                          "count and decline as SMT threads / E-cores add contention rather than throughput, so `best` above " +
+                          "is the peak, not the 32-thread figure. A hardware/topology effect — it holds identically in Mono " +
+                          "and IL2CPP._");
             return sb.ToString();
         }
 
