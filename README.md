@@ -71,7 +71,7 @@ ball.AddSphere(new B3Sphere { Radius = 0.5f });
 world.Step(1f / 60f);
 ```
 
-## API coverage (0.1.0)
+## API coverage
 
 **Bound:** world lifecycle/stepping; world queries (closest ray, raw ray/shape cast with
 closest-hit helper, overlap, AABB overlap, capsule mover cast + collide); the plane solver
